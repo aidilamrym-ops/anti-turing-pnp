@@ -46,11 +46,13 @@ Anti_Turing_PNP/
 ## Citation
 
 ```bibtex
-@misc{amry2026antituring,
-  title={The Anti-Turing Operator $\mathcal{U}_T(\mathbf{NP})$: Resolving P vs NP via Continuous-Time Liquid Neural ODE Collapse},
-  author={Amry, Muhammad Aidil},
-  year={2026},
-  note={Lean 4 + Z3 SMT formal methods, ORCID: 0009-0002-9718-9710}
+@article{amry2026anti_turing_v1,
+  author  = {Amry, Muhammad Aidil},
+  title   = {Operator Anti-Turing $\mathcal{O}_{T(NP)}$: Resolusi Deterministik O(1) untuk P versus NP (Volume 1)},
+  journal = {Zenodo Archive},
+  year    = {2026},
+  doi     = {10.5281/zenodo.21187095},
+  note    = {Foundational analytic synthesis and computational physics framework}
 }
 ```
 
@@ -59,7 +61,7 @@ Anti_Turing_PNP/
 - **Author**: Muhammad Aidil Amry (Sang Arsitek)
 - **ORCID**: [0009-0002-9718-9710](https://orcid.org/0009-0002-9718-9710)
 - **Repository**: https://github.com/aidilamrym-ops/anti-turing-pnp
-- **Zenodo DOI**: [Pending upload]
+- **Zenodo DOI**: [10.5281/zenodo.21187095](https://doi.org/10.5281/zenodo.21187095)
 
 ---
 *Law: [UNSAT = KILL]*
