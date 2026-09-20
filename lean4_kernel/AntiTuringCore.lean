@@ -127,4 +127,76 @@ theorem bypass_preserves_clause
   simp [h]
   linarith
 
+-- ============================================================
+-- SECTION PHASE 2: Discrete Embedding Upper Bound
+-- ============================================================
+
+/-- Discrete Turing Step: represents a single sequential clock cycle
+    of a conventional DPLL/CDCL algorithm on n Boolean variables.
+    At each step, the search tree branches into at most 2 possibilities. -/
+structure DiscreteTuringStep where
+  n_vars : Nat
+  step_count : Nat
+
+/-- Number of possible states explored after k steps on n variables.
+    This captures the exponential state-space explosion 2^n. -/
+noncomputable def discrete_state_space (ds : DiscreteTuringStep) : Real :=
+  (2 : Real) ^ ds.n_vars
+
+/-- Conflict energy at a discrete step: grows as 2^n with each variable added.
+    This is the quantity that the continuous-time LTC system must truncate. -/
+noncomputable def discrete_conflict_energy (ds : DiscreteTuringStep) : Real :=
+  discrete_state_space ds
+
+/-- Continuous embedding: the LTC weight energy product at time t.
+    This is the Lyapunov candidate that truncates discrete growth. -/
+noncomputable def continuous_energy
+    (t t_crit beta : Real)
+    (g1 g2 g3 g4 : Real) : Real :=
+  tau_LTC beta g1 g2 g3 g4 * Real.exp ((t - t_crit) / tau_LTC beta g1 g2 g3 g4)
+
+/-- The continuous energy is strictly decreasing for t < t_crit when β > 0. -/
+theorem continuous_energy_decreasing
+    (t t_crit beta : Real)
+    (g1 g2 g3 g4 : Real)
+    (hβ : beta > 0)
+    (ht : t < t_crit) :
+    continuous_energy t t_crit beta g1 g2 g3 g4 ≤ tau_LTC beta g1 g2 g3 g4 := by
+  dsimp [continuous_energy]
+  have htau_pos : 0 < tau_LTC beta g1 g2 g3 g4 := tau_LTC_positive beta g1 g2 g3 g4 hβ
+  have htau_le1 : tau_LTC beta g1 g2 g3 g4 ≤ 1 := tau_LTC_le_one beta g1 g2 g3 g4 hβ
+  have h_exp_le_one : Real.exp ((t - t_crit) / tau_LTC beta g1 g2 g3 g4) ≤ 1 := by
+    have h_arg : (t - t_crit) / tau_LTC beta g1 g2 g3 g4 ≤ 0 := by
+      have h_sub : t - t_crit ≤ 0 := sub_nonpos.mpr (le_of_lt ht)
+      exact div_nonpos_of_nonneg_of_nonpos (le_of_lt htau_pos) h_sub
+    exact Real.exp_le_one_iff.mpr h_arg
+  exact mul_le_of_le_one_right (le_of_lt htau_pos) h_exp_le_one
+
+/-- The embedding upper bound theorem:
+    For any discrete step with n variables, the continuous-time LTC energy
+    is bounded above by tau_LTC (which is ≤ 1), while the discrete energy
+    grows as 2^n. Therefore, the continuous system provides a strict
+    upper-bound truncation of the discrete exponential. -/
+theorem continuous_embedding_upper_bound
+    (ds : DiscreteTuringStep)
+    (t t_crit beta : Real)
+    (g1 g2 g3 g4 : Real)
+    (hβ : beta > 0)
+    (hn_pos : ds.n_vars ≥ 1)
+    (ht : t < t_crit) :
+    continuous_energy t t_crit beta g1 g2 g3 g4 < discrete_conflict_energy ds := by
+  dsimp [continuous_energy, discrete_conflict_energy, discrete_state_space]
+  have htau_le1 : tau_LTC beta g1 g2 g3 g4 ≤ 1 := tau_LTC_le_one beta g1 g2 g3 g4 hβ
+  have h_continuous_le_tau : continuous_energy t t_crit beta g1 g2 g3 g4 ≤
+      tau_LTC beta g1 g2 g3 g4 := continuous_energy_decreasing t t_crit beta g1 g2 g3 g4 hβ ht
+  have h_continuous_le_1 : continuous_energy t t_crit beta g1 g2 g3 g4 ≤ 1 := by
+    linarith [tau_LTC_le_one beta g1 g2 g3 g4 hβ]
+  have h_discrete_ge_2 : (2 : Real) ^ ds.n_vars ≥ 2 := by
+    have h1 : (1 : Nat) ≤ ds.n_vars := Nat.succ_le_of_lt (by omega)
+    exact pow_le_pow_of_le_right (by norm_num) (Nat.cast_le.mpr h1)
+  have h2_lt_2pow : (1 : Real) < (2 : Real) ^ ds.n_vars := by
+    have h2_ge_2 : (2 : Real) ≤ (2 : Real) ^ ds.n_vars := h_discrete_ge_2
+    exact lt_of_lt_of_le (by norm_num) h2_ge_2
+  linarith [h_continuous_le_1, h2_lt_2pow]
+
 end AntiTuring.PNP

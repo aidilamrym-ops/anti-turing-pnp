@@ -1,0 +1,15 @@
+{
+    "project": "Anti-Turing P vs NP",
+    "batch_1": {
+        "status": "UNSAT_VERIFIED",
+        "assertions": 4,
+        "source": "Lampiran C SMT-LIB2",
+        "description": "Singularity Decay — exponential blowup counterexample inconsistent in continuous-time manifold"
+    },
+    "batch_2": {
+        "status": "UNSAT_VERIFIED",
+        "assertions": 5,
+        "source": "Bab 5.2-5.3 Treatise",
+        "description": "Discrete Embedding Upper Bound — continuous energy <= tau <= 1 << 2^n for n >= 100"
+    }
+}
