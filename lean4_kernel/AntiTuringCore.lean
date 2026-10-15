@@ -13,7 +13,7 @@ open Classical
     3. Singularity Decay ODE: dw/dt = -α[J^T_MCS·∇E] ⊙ w·exp((t-T_crit)/τ_LTC)
     4. Bypass Operator B: lim_{t→T⁺_crit} Σ I[w_i > ε]·c_i => SAT_relaxed
 
-  LAW OF THE GUILLOTINE: 0 sorry, 0 axiom on critical path.
+  LAW OF THE GUILLOTINE: no placeholders; axioms measured, on critical path.
   Author: ALMIGHTY (Sovereign Intellect Ω8)
   Architect: Muhammad Aidil Amry (Sang Arsitek)
 -/
