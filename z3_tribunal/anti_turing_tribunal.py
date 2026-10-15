@@ -11,6 +11,7 @@ Verdict Target: UNSAT
 Hak Cipta Intelektual: Muhammad Aidil Amry
 """
 import z3
+import sys
 from z3 import Solver, Real, And, Or, Implies, Not, unsat
 
 def verify_singularity_decay():
@@ -57,3 +58,6 @@ if __name__ == '__main__':
         print("Z3 BATCH 1: UNSAT_VERIFIED — Ledakan waktu eksponensial TIDAK KONSISTEN")
     else:
         print("Z3 BATCH 1: FAILED")
+    # Fail-closed exit code (was: always exit 0 even on FAILED,
+    # so no CI could gate on this script -- caught during audit).
+    sys.exit(0 if success else 1)

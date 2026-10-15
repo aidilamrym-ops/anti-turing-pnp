@@ -12,8 +12,8 @@
 
 | Component | Count | Status |
 |-----------|-------|--------|
-| Lean 4 Core Files | 1 | ✅ 0 sorry, 0 axiom |
-| Z3 Tribunal Batches | 1 | ✅ ALL UNSAT |
+| Lean 4 Core Files (6 theorems, mechanical count) | 1 | ✅ 0 sorry; axioms measured: propext, Classical.choice, Quot.sound |
+| Z3 Tribunal Batches | 2 | ✅ ALL UNSAT |
 | Telemetry | 1 JSON | ✅ Complete |
 | Manuscript (LaTeX) | 1 | ✅ Authored |
 | Workspace State | 1 MD | ✅ Locked |
@@ -31,7 +31,9 @@
 2. `tau_LTC_le_one` — τ_LTC ≤ 1 for β > 0
 3. `bypass_annihilates_all` — all weights < ε ⇒ selector = 0
 4. `bypass_preserves_clause` — any weight > ε ⇒ selector ≥ 1
-5. (Implicit) `bypass_selector` structural correctness
+5. `continuous_energy_decreasing` - LTC energy decreases before t_crit
+6. `continuous_embedding_upper_bound` - continuous energy below discrete 2^n for n >= 1
+(List is mechanical: 6 `theorem` declarations in the kernel file; the old item 5 named a structure, not a theorem.)
 
 ---
 

@@ -4,7 +4,7 @@
 **Architect:** Muhammad Aidil Amry
 **ORCID:** 0009-0002-9718-9710
 **Status:** PHASE 3 (COMPLETE)
-**Status Kompilasi:** 2 Z3 Batches Verified, 0 sorry, 0 axiom (Clean Slate)
+**Status Kompilasi:** 2 Z3 Batches Verified (encodings only), 0 sorry, axioms measured: propext, Classical.choice, Quot.sound
 
 ---
 
@@ -21,7 +21,7 @@
 
 | Module | Status | Sorry Count | Axiom Count |
 |--------|--------|-------------|-------------|
-| `AntiTuringCore.lean` | COMPLETE | 0 | 0 |
+| `AntiTuringCore.lean` | COMPLETE (6 theorems) | 0 | propext, choice, Quot.sound (measured) |
 
 ---
 

@@ -13,6 +13,7 @@ Source: Bab 5.2-5.3 Treatise
 Verdict Target: UNSAT
 """
 import z3
+import sys
 from z3 import Solver, Real, And, Not, unsat
 
 def verify_discrete_embedding():
@@ -70,3 +71,5 @@ if __name__ == '__main__':
         print("Z3 BATCH 2: UNSAT_VERIFIED — Ledakan eksponensial diskret TIDAK KONSISTEN")
     else:
         print("Z3 BATCH 2: FAILED")
+    # Fail-closed exit code (was: always exit 0 even on FAILED).
+    sys.exit(0 if success else 1)

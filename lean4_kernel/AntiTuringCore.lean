@@ -1,4 +1,5 @@
 import Lean
+import Mathlib
 open Classical
 
 /-!
@@ -23,11 +24,8 @@ namespace AntiTuring.PNP
 -- SECTION 5.1: Pemetaan Bobot Kebenaran Kontinu (Truth Weights)
 -- ============================================================
 
-/-- State dimension: number of clauses n in the logical system. -/
-def StateDim : Nat := 42
-
-/-- Continuous truth weight vector w(t) ∈ (0, 1]^n for n clauses.
-    Each component w_i(t) represents the "viability weight" of clause i. -/
+/-- Continuous truth weight vector w(t) ∈ (0, 1]^4 (four-component
+    instance; the dimension is fixed here, see GAP-PNP.md). -/
 structure VectorFieldLTC where
   w1 : Real
   w2 : Real
@@ -51,15 +49,11 @@ noncomputable def tau_LTC (beta : Real) (g1 g2 g3 g4 : Real) : Real :=
 /-- Well-posedness: β > 0 ⇒ τ_LTC ∈ (0,1) ⇒ time-constant is well-behaved. -/
 theorem tau_LTC_positive
     (beta g1 g2 g3 g4 : Real)
-    (hβ : beta > 0) :
+    (_hβ : beta > 0) :
     0 < tau_LTC beta g1 g2 g3 g4 := by
   dsimp [tau_LTC, energy_gradient_norm]
   have hsqrt : 0 ≤ g1^2 + g2^2 + g3^2 + g4^2 := by
     positivity
-  have hexp_arg : -beta * Real.sqrt (g1^2 + g2^2 + g3^2 + g4^2) < 0 := by
-    have hs : 0 ≤ Real.sqrt (g1^2 + g2^2 + g3^2 + g4^2) := Real.sqrt_nonneg _
-    have h_neg : -beta < 0 := neg_lt_zero.mpr hβ
-    exact mul_neg_of_neg_of_nonneg h_neg hs
   have hexp_pos : 0 < Real.exp (-beta * Real.sqrt (g1^2 + g2^2 + g3^2 + g4^2)) :=
     Real.exp_pos _
   have h_denom : 1 + Real.exp (-beta * Real.sqrt (g1^2 + g2^2 + g3^2 + g4^2)) > 0 :=
@@ -69,14 +63,19 @@ theorem tau_LTC_positive
 /-- τ_LTC is bounded above by 1 (for β > 0). -/
 theorem tau_LTC_le_one
     (beta g1 g2 g3 g4 : Real)
-    (hβ : beta > 0) :
+    (_hβ : beta > 0) :
     tau_LTC beta g1 g2 g3 g4 ≤ 1 := by
   dsimp [tau_LTC, energy_gradient_norm]
   have hexp_pos : 0 < Real.exp (-beta * Real.sqrt (g1^2 + g2^2 + g3^2 + g4^2)) :=
     Real.exp_pos _
   have h_denom_ge_one : 1 + Real.exp (-beta * Real.sqrt (g1^2 + g2^2 + g3^2 + g4^2)) ≥ 1 :=
     by linarith [hexp_pos]
-  exact div_le_one_of_le h_denom_ge_one (by linarith)
+  -- div_le_one_of_le does not exist in Mathlib (and the inequality it
+  -- would state is proved here directly from div_le_one).
+  exact (div_le_one (by linarith : (0 : Real) <
+    1 + Real.exp (-beta * Real.sqrt (g1^2 + g2^2 + g3^2 + g4^2)))).mpr
+    (by linarith : (1 : Real) ≤
+      1 + Real.exp (-beta * Real.sqrt (g1^2 + g2^2 + g3^2 + g4^2)))
 
 -- ============================================================
 -- SECTION 5.3: Operator Bypass Asimtotik B
@@ -92,7 +91,7 @@ noncomputable def bypass_epsilon : Real := 0.5
 
 /-- The Bypass Operator B(Φ, t):
     At t → T⁺_crit, the operator performs element-wise indicator filtering:
-    B(Φ, t) = lim_{t→T⁺_crit} Σ_{i=1}^n I[w_i(t) > ε] · c_i => SAT_relaxed
+    B(phi, t) = finite indicator sum over the four components (no limit taken here; see GAP-PNP.md) => SAT_relaxed
 
     We formalize the key property: the weight cutoff is strict, not fuzzy. -/
 noncomputable def bypass_selector (w : VectorFieldLTC) : Real :=
@@ -112,10 +111,19 @@ theorem bypass_annihilates_all
     (h3 : w.w3 ≤ bypass_epsilon)
     (h4 : w.w4 ≤ bypass_epsilon) :
     bypass_selector w = 0 := by
-  dsimp [bypass_selector, bypass_epsilon]
-  simp [h1, h2, h3, h4]
-  -- Each conditional branch takes the "else 0" path
-  omega
+  -- Never unfold the definition: every `if` below mentions
+  -- `bypass_epsilon` exactly as elaborated, so use-site and
+  -- definition-site Decidable instances coincide (verified: the same
+  -- pattern with unfolded literals fails to match).
+  dsimp [bypass_selector]
+  have key : ∀ t : Real, ∀ h : t ≤ bypass_epsilon,
+      (if t > bypass_epsilon then (1 : Real) else 0) = 0 := by
+    intro t h
+    refine if_neg ?_
+    intro hcon
+    linarith
+  rw [key w.w1 h1, key w.w2 h2, key w.w3 h3, key w.w4 h4]
+  norm_num
 
 /-- Complementary theorem: If ANY weight exceeds ε, the bypass selector
     is strictly positive (system retains at least one surviving clause). -/
@@ -123,9 +131,18 @@ theorem bypass_preserves_clause
     (w : VectorFieldLTC)
     (h : w.w1 > bypass_epsilon) :
     bypass_selector w ≥ 1 := by
-  dsimp [bypass_selector, bypass_epsilon]
-  simp [h]
-  linarith
+  -- Same def-consistent strategy: the lower bound is proved at the
+  -- same site as the branch it bounds, then `linarith` finishes.
+  dsimp [bypass_selector]
+  have keypos : ∀ t : Real, ∀ h : t > bypass_epsilon,
+      (if t > bypass_epsilon then (1 : Real) else 0) = 1 :=
+    fun t h => if_pos h
+  have nn : ∀ t : Real,
+      (0 : Real) ≤ (if t > bypass_epsilon then 1 else 0) := by
+    intro t
+    by_cases hc : t > bypass_epsilon <;> simp [hc]
+  rw [keypos w.w1 h]
+  linarith [nn w.w2, nn w.w3, nn w.w4]
 
 -- ============================================================
 -- SECTION PHASE 2: Discrete Embedding Upper Bound
@@ -166,11 +183,24 @@ theorem continuous_energy_decreasing
   have htau_pos : 0 < tau_LTC beta g1 g2 g3 g4 := tau_LTC_positive beta g1 g2 g3 g4 hβ
   have htau_le1 : tau_LTC beta g1 g2 g3 g4 ≤ 1 := tau_LTC_le_one beta g1 g2 g3 g4 hβ
   have h_exp_le_one : Real.exp ((t - t_crit) / tau_LTC beta g1 g2 g3 g4) ≤ 1 := by
+    -- `div_nonpos_of_nonneg_of_nonpos` does not exist in Mathlib; the
+    -- verified `div_nonpos_iff` (disjunction) carries the same content.
+    -- (Indentation is load-bearing here: an earlier revision of this
+    -- fix placed these lines at the outer level, leaving this `by`
+    -- block empty -- caught by "unsolved goals", not by eye.)
     have h_arg : (t - t_crit) / tau_LTC beta g1 g2 g3 g4 ≤ 0 := by
       have h_sub : t - t_crit ≤ 0 := sub_nonpos.mpr (le_of_lt ht)
-      exact div_nonpos_of_nonneg_of_nonpos (le_of_lt htau_pos) h_sub
+      rw [div_nonpos_iff]
+      exact Or.inr ⟨h_sub, le_of_lt htau_pos⟩
     exact Real.exp_le_one_iff.mpr h_arg
-  exact mul_le_of_le_one_right (le_of_lt htau_pos) h_exp_le_one
+  -- `mul_le_of_le_one_right` does not exist in Mathlib; the product
+  -- bound below uses `mul_le_mul_of_nonneg_left` (verified present).
+  have htau_nonneg : (0 : Real) ≤ tau_LTC beta g1 g2 g3 g4 :=
+    le_of_lt htau_pos
+  calc tau_LTC beta g1 g2 g3 g4 * Real.exp ((t - t_crit) / tau_LTC beta g1 g2 g3 g4)
+      ≤ tau_LTC beta g1 g2 g3 g4 * 1 :=
+        mul_le_mul_of_nonneg_left h_exp_le_one htau_nonneg
+    _ = tau_LTC beta g1 g2 g3 g4 := mul_one _
 
 /-- The embedding upper bound theorem:
     For any discrete step with n variables, the continuous-time LTC energy
@@ -185,15 +215,23 @@ theorem continuous_embedding_upper_bound
     (hn_pos : ds.n_vars ≥ 1)
     (ht : t < t_crit) :
     continuous_energy t t_crit beta g1 g2 g3 g4 < discrete_conflict_energy ds := by
-  dsimp [continuous_energy, discrete_conflict_energy, discrete_state_space]
+  -- Unfold ONLY the discrete side: the goal's left side must stay folded
+  -- so `linarith` can match it against `h_continuous_le_1` (unfolding
+  -- everything orphans the hypotheses into different atoms -- the reason
+  -- the original closing `linarith` could never fire).
+  dsimp only [discrete_conflict_energy, discrete_state_space]
   have htau_le1 : tau_LTC beta g1 g2 g3 g4 ≤ 1 := tau_LTC_le_one beta g1 g2 g3 g4 hβ
   have h_continuous_le_tau : continuous_energy t t_crit beta g1 g2 g3 g4 ≤
       tau_LTC beta g1 g2 g3 g4 := continuous_energy_decreasing t t_crit beta g1 g2 g3 g4 hβ ht
   have h_continuous_le_1 : continuous_energy t t_crit beta g1 g2 g3 g4 ≤ 1 := by
     linarith [tau_LTC_le_one beta g1 g2 g3 g4 hβ]
-  have h_discrete_ge_2 : (2 : Real) ^ ds.n_vars ≥ 2 := by
-    have h1 : (1 : Nat) ≤ ds.n_vars := Nat.succ_le_of_lt (by omega)
-    exact pow_le_pow_of_le_right (by norm_num) (Nat.cast_le.mpr h1)
+  have h_discrete_ge_2 : (2 : Real) ≤ (2 : Real) ^ ds.n_vars := by
+    -- `pow_le_pow_of_le_right` does not exist in Mathlib (and the
+    -- general `pow_le_pow_right'` needs typeclasses ℝ lacks); bridge
+    -- through Nat, where `Nat.le_self_pow` is core and unconditional.
+    have hne : ds.n_vars ≠ 0 := by omega
+    have hN : 2 ≤ 2 ^ ds.n_vars := Nat.le_self_pow hne 2
+    exact_mod_cast hN
   have h2_lt_2pow : (1 : Real) < (2 : Real) ^ ds.n_vars := by
     have h2_ge_2 : (2 : Real) ≤ (2 : Real) ^ ds.n_vars := h_discrete_ge_2
     exact lt_of_lt_of_le (by norm_num) h2_ge_2

@@ -8,11 +8,11 @@
 
 ## Overview
 
-This repository contains the formal verification pipeline for the **Anti-Turing Operator $\mathcal{U}_T(\mathbf{NP})$**, resolving the **P vs NP problem** by shifting computation from discrete combinatorics to continuous-time Liquid Time-Constant (LTC) Neural ODE dynamics. 
+This repository contains the formal verification pipeline for the **Anti-Turing Operator $\mathcal{U}_T(\mathbf{NP})$**, proving continuous-time relaxation bounds by shifting computation (the P-vs-NP entailment gap is documented in GAP-PNP.md; see Scope note below) from discrete combinatorics to continuous-time Liquid Time-Constant (LTC) Neural ODE dynamics. 
 
-By formulating the contradiction energy decay and the Asymptotic Bypass Operator $\mathcal{B}$, we prove that exponential state-space explosion is truncated into constant-time $\mathcal{O}(1)$ resolution (`SAT_relaxed`).
+By formulating the contradiction energy decay and the Asymptotic Bypass Operator $\mathcal{B}$, we prove finite four-component selector bounds and energy decay (`SAT_relaxed`); no Turing-machine time claim is made (see Scope note).
 
-**Status**: Machine-checked, zero `sorry`, zero `axiom` in the critical path.
+**Status**: Machine-checked (6 theorems, zero `sorry`; axiom footprint measured by `#print axioms`: propext, Classical.choice, Quot.sound), Z3 UNSAT on the two encoded batches (scope: encodings only, see Scope note).
 
 ## Repository Structure
 
@@ -37,11 +37,19 @@ Anti_Turing_PNP/
 - `tau_LTC_positive`: Liquid time-constant positivity ($\tau > 0$)
 - `tau_LTC_le_one`: Bounded upper scale ($\tau \le 1$)
 - `bypass_annihilates_all`: Complete weight decay guarantees selector = 0 (`SAT_relaxed`)
+- `bypass_preserves_clause`: Any surviving weight keeps selector >= 1
+- `continuous_energy_decreasing`: LTC energy decreases before t_crit
+(Theorem list is mechanical: 6 `theorem` declarations in the kernel file.)
 - `continuous_embedding_upper_bound`: Continuous LTC energy strictly truncates discrete exponential $2^n$ ($n \ge 100$)
 
 ### Z3 SMT Tribunal
 - **Batch 1** (`anti_turing_tribunal.py`): Singularity Decay ODE consistency — **UNSAT**
 - **Batch 2** (`anti_turing_batch2.py`): Discrete Embedding Upper Bound — **UNSAT**
+
+## Scope note (binding)
+- Batch 2 proves the numeric instance n >= 100; the Lean theorem covers general n >= 1.
+- The Lean theorems prove real-analysis facts (sigmoid bounds, indicator counting, energy decay). They contain no definitions of P, NP, SAT, polynomial-time Turing computation, or reductions, and therefore entail no P-vs-NP statement either way. See GAP-PNP.md for the precise gap and what would close it.
+- Each Z3 batch verifies the arithmetic of its own encoding (batch 1: an implication; batch 2: the n >= 100 numeric instance). Neither batch states or proves a complexity bound.
 
 ## Citation
 
